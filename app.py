@@ -7,14 +7,17 @@ from google import genai
 import pandas as pd
 import time
 
-# Get API key from Streamlit secrets
-os.environ["AQ.Ab8RN6JnKuu0YCtFUskbQeghPAnoF0fjHuid5L388JjXkxlEjQ"] = st.secrets["AQ.Ab8RN6JnKuu0YCtFUskbQeghPAnoF0fjHuid5L388JjXkxlEjQ"]
+os.environ["GOOGLE_API_KEY"] = "AQ.Ab8RN6JnKuu0YCtFUskbQeghPAnoF0fjHuid5L388JjXkxlEjQ"
+client = genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
 
 st.title("StrainX Bioworks Chatbot")
 
 @st.cache_resource
 def load_db():
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
+    embeddings = GoogleGenerativeAIEmbeddings(
+        model="models/gemini-embedding-001",
+        google_api_key="AQ.Ab8RN6JnKuu0YCtFUskbQeghPAnoF0fjHuid5L388JjXkxlEjQ"
+    )
     
     if not os.path.exists('./database') or not os.listdir('./database'):
         st.info("Building database for first time... this may take a few minutes.")
