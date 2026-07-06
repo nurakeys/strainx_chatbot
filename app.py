@@ -8,8 +8,7 @@ import pandas as pd
 import time
 
 # Get API key from Streamlit secrets
-os.environ["GOOGLE_API_KEY"] = st.secrets["AQ.Ab8RN6JnKuu0YCtFUskbQeghPAnoF0fjHuid5L388JjXkxlEjQ"]
-client = genai.Client(api_key=os.environ["AQ.Ab8RN6JnKuu0YCtFUskbQeghPAnoF0fjHuid5L388JjXkxlEjQ"])
+os.environ["AQ.Ab8RN6JnKuu0YCtFUskbQeghPAnoF0fjHuid5L388JjXkxlEjQ"] = st.secrets["AQ.Ab8RN6JnKuu0YCtFUskbQeghPAnoF0fjHuid5L388JjXkxlEjQ"]
 
 st.title("StrainX Bioworks Chatbot")
 
