@@ -1,3 +1,4 @@
+import streamlit as st
 import os
 from langchain_community.vectorstores import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
@@ -6,11 +7,9 @@ from google import genai
 import pandas as pd
 import time
 
-# Get API key from Streamlit secrets or environment
-if "GOOGLE_API_KEY" in st.secrets:
-    os.environ["AQ.Ab8RN6JnKuu0YCtFUskbQeghPAnoF0fjHuid5L388JjXkxlEjQ"] = st.secrets["AQ.Ab8RN6JnKuu0YCtFUskbQeghPAnoF0fjHuid5L388JjXkxlEjQ"]
-
-client = genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
+# Get API key from Streamlit secrets
+os.environ["GOOGLE_API_KEY"] = st.secrets["AQ.Ab8RN6JnKuu0YCtFUskbQeghPAnoF0fjHuid5L388JjXkxlEjQ"]
+client = genai.Client(api_key=os.environ["AQ.Ab8RN6JnKuu0YCtFUskbQeghPAnoF0fjHuid5L388JjXkxlEjQ"])
 
 st.title("StrainX Bioworks Chatbot")
 
@@ -18,7 +17,6 @@ st.title("StrainX Bioworks Chatbot")
 def load_db():
     embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
     
-    # If database doesn't exist, build it
     if not os.path.exists('./database') or not os.listdir('./database'):
         st.info("Building database for first time... this may take a few minutes.")
         
