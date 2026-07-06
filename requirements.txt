@@ -1,9 +1,5 @@
 streamlit
-langchain
-langchain-community
-langchain-google-genai
-langchain-core
-chromadb
 google-genai
+chromadb
 pandas
 openpyxl
