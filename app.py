@@ -1,15 +1,12 @@
-The issue is that langchain-google-genai is using an old authentication method that doesn't support AQ keys. Let's bypass it entirely and use a different approach for embeddings.
-Replace everything in app.py on GitHub with this — it uses the Google genai package directly for embeddings instead of langchain:
-pythonimport streamlit as st
+import streamlit as st
 import os
 from google import genai
-from google.genai import types
 import chromadb
 import pandas as pd
 import time
 import uuid
 
-API_KEY = "AQ.Ab8RN6JnKuu0YCtFUskbQeghPAnoF0fjHuid5L388JjXkxlEjQ"
+API_KEY = st.secrets["GOOGLE_API_KEY"]
 client = genai.Client(api_key=API_KEY)
 
 st.title("StrainX Bioworks Chatbot")
