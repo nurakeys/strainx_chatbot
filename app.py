@@ -1,25 +1,29 @@
-import streamlit as st
+The issue is that langchain-google-genai is using an old authentication method that doesn't support AQ keys. Let's bypass it entirely and use a different approach for embeddings.
+Replace everything in app.py on GitHub with this — it uses the Google genai package directly for embeddings instead of langchain:
+pythonimport streamlit as st
 import os
-from langchain_community.vectorstores import Chroma
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain_core.documents import Document as LangchainDocument
 from google import genai
+from google.genai import types
+import chromadb
 import pandas as pd
 import time
+import uuid
 
-os.environ["GOOGLE_API_KEY"] = "AQ.Ab8RN6JnKuu0YCtFUskbQeghPAnoF0fjHuid5L388JjXkxlEjQ"
-client = genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
+API_KEY = "AQ.Ab8RN6JnKuu0YCtFUskbQeghPAnoF0fjHuid5L388JjXkxlEjQ"
+client = genai.Client(api_key=API_KEY)
 
 st.title("StrainX Bioworks Chatbot")
 
 @st.cache_resource
 def load_db():
-    embeddings = GoogleGenerativeAIEmbeddings(
-        model="models/gemini-embedding-001",
-        google_api_key="AQ.Ab8RN6JnKuu0YCtFUskbQeghPAnoF0fjHuid5L388JjXkxlEjQ"
-    )
+    chroma_client = chromadb.PersistentClient(path="./database")
     
-    if not os.path.exists('./database') or not os.listdir('./database'):
+    try:
+        collection = chroma_client.get_collection("strainx")
+        return collection, chroma_client
+    except:
+        collection = chroma_client.create_collection("strainx")
+        
         st.info("Building database for first time... this may take a few minutes.")
         
         df1 = pd.read_excel('Strain x.xlsx')
@@ -29,30 +33,24 @@ def load_db():
         docs = []
         for _, row in df.iterrows():
             text = ' '.join([f"{col}: {val}" for col, val in row.items() if pd.notna(val)])
-            docs.append(LangchainDocument(page_content=text))
+            docs.append(text)
 
-        if 'YEAR' in df.columns:
-            year_summary = "Year distribution of studies in database:\n"
-            year_counts = df['YEAR'].value_counts().sort_index()
-            for year, count in year_counts.items():
-                year_summary += f"{int(year)}: {count} studies\n"
-            docs.append(LangchainDocument(page_content=year_summary))
-
-        batch_size = 10
+        batch_size = 5
         for i in range(0, len(docs), batch_size):
             batch = docs[i:i+batch_size]
-            if i == 0:
-                db = Chroma.from_documents(batch, embeddings, persist_directory='./database')
-            else:
-                db.add_documents(batch)
+            result = client.models.embed_content(
+                model="models/gemini-embedding-001",
+                contents=batch
+            )
+            embeddings = [e.values for e in result.embeddings]
+            ids = [str(uuid.uuid4()) for _ in batch]
+            collection.add(documents=batch, embeddings=embeddings, ids=ids)
             time.sleep(15)
         
-        st.success("Database built successfully!")
-        return db
-    
-    return Chroma(persist_directory='./database', embedding_function=embeddings)
+        st.success("Database built!")
+        return collection, chroma_client
 
-db = load_db()
+collection, chroma_client = load_db()
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -66,8 +64,13 @@ if question := st.chat_input("Ask a question about the database..."):
     with st.chat_message("user"):
         st.write(question)
 
-    results = db.similarity_search(question, k=20)
-    context = '\n'.join([r.page_content for r in results])
+    query_embedding = client.models.embed_content(
+        model="models/gemini-embedding-001",
+        contents=[question]
+    ).embeddings[0].values
+
+    results = collection.query(query_embeddings=[query_embedding], n_results=20)
+    context = '\n'.join(results['documents'][0])
 
     prompt = f"""You are a research assistant for the StrainX Bioworks database. Answer questions based strictly on the context provided below. If the answer is in the context, provide it clearly and directly.
 
